@@ -155,15 +155,18 @@ public class FolderSelectPreference extends Preference implements TextWatcher {
 								double longitude = 0;
 								String info = null;
 								int index = 0;
-								//parse each row read
-								//if there is no info then add no info to the waypoint
-								//XXX in case of multiple waypoint files the waypoint order is indeterminate
+								// parse each row read
+								// if there is no info then add no info to the
+								// waypoint
+								// XXX in case of multiple waypoint files the
+								// waypoint order is indeterminate
 								for (String[] data : raw) {
 									// latitude, longitude, optional info
 
 									latitude = Double.parseDouble(data[0]);
 									longitude = Double.parseDouble(data[1]);
-									//if there is no info just ignore the third position
+									// if there is no info just ignore the third
+									// position
 									if (data.length > 2) {
 										info = data[3];
 									}
@@ -171,7 +174,8 @@ public class FolderSelectPreference extends Preference implements TextWatcher {
 									Location location = new Location(FROM_FILE);
 									location.setLatitude(latitude);
 									location.setLongitude(longitude);
-									Waypoint point = new Waypoint(location, index, false);
+									Waypoint point = new Waypoint(location,
+											index, false);
 									point.setInfo(info);
 									waypoints.add(point);
 								}
@@ -183,7 +187,7 @@ public class FolderSelectPreference extends Preference implements TextWatcher {
 							}
 							progress.incrementProgressBy(1);
 						}
-						//add all the waypoints at once to prevent extra work
+						// add all the waypoints at once to prevent extra work
 						manager.addWaypoints(waypoints);
 						progress.dismiss();
 					}

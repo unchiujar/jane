@@ -429,6 +429,10 @@ public class WaypointMap extends FragmentActivity implements Observer {
 		inflater.inflate(R.layout.menu, menu);
 		menu.findItem(R.id.where_am_i).setIcon(
 				android.R.drawable.ic_menu_mylocation);
+		
+		menu.findItem(R.id.add_waypoint).setIcon(
+				android.R.drawable.star_on);
+		
 		menu.findItem(R.id.settings).setIcon(
 				android.R.drawable.ic_menu_preferences);
 		menu.findItem(R.id.help).setIcon(android.R.drawable.ic_menu_help);
