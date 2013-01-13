@@ -22,10 +22,10 @@ public class WaypointManagerTest {
 	@Test
 	public void creation() throws Exception {
 		ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 1, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 2, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 3, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 4, false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
 		WaypointManager cache = new WaypointManager(waypoints);
 		assertEquals(waypoints.size(), cache.getSize());
 	}
@@ -33,10 +33,10 @@ public class WaypointManagerTest {
 	@Test
 	public void setGetWaypoints() throws Exception {
 		ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 1, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 2, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 3, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 4, false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
 		WaypointManager cache = new WaypointManager();
 		cache.setWaypoints(waypoints);
 
@@ -46,10 +46,10 @@ public class WaypointManagerTest {
 	@Test
 	public void addGetWaypoints() throws Exception {
 		ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 1, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 2, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 3, false));
-		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), 4, false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
+		waypoints.add(new Waypoint(new Location(TEST_PROVIDER), false));
 		WaypointManager cache = new WaypointManager();
 		cache.addWaypoints(waypoints);
 		assertArrayEquals(waypoints.toArray(), cache.getWaypoints().toArray());
@@ -58,31 +58,27 @@ public class WaypointManagerTest {
 	@Test
 	public void addGetWaypoint() throws Exception {
 		WaypointManager cache = new WaypointManager();
-		Waypoint waypoint = new Waypoint(new Location(TEST_PROVIDER), 1, false);
+		Waypoint waypoint = new Waypoint(new Location(TEST_PROVIDER), false);
 		cache.addWaypoint(waypoint);
-		assertEquals(waypoint, cache.getWaypoint(waypoint.getIndex()));
+		assertEquals(waypoint, cache.getWaypoint(0));
 	}
 
 	@Test(expected = WaypointNotFoundException.class)
 	public void addGetDeleteWaypoint() throws Exception {
 		WaypointManager cache = new WaypointManager();
-		final int index = 3;
-		Waypoint waypoint = new Waypoint(new Location(TEST_PROVIDER), index,
-				false);
+		Waypoint waypoint = new Waypoint(new Location(TEST_PROVIDER), false);
 		cache.addWaypoint(waypoint);
-		assertEquals(waypoint, cache.getWaypoint(index));
-		cache.deleteWaypoint(index);
-		cache.getWaypoint(index);
+		cache.deleteWaypoint(0);
+		cache.getWaypoint(0);
 	}
 
 	@Test
 	public void markReached() throws Exception {
 		WaypointManager cache = new WaypointManager();
 		final int index = 3;
-		Waypoint waypoint = new Waypoint(new Location(TEST_PROVIDER), index,
-				false);
+		Waypoint waypoint = new Waypoint(new Location(TEST_PROVIDER), false);
 		cache.addWaypoint(waypoint);
-		//sanity checks
+		// sanity checks
 		assertEquals(waypoint, cache.getWaypoint(index));
 		assertFalse(cache.getWaypoint(index).isReached());
 

@@ -61,15 +61,16 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
-import android.support.v4.app.FragmentActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -81,7 +82,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
  * @author Vasile Jureschi
  * @see LocationService
  */
-public class WaypointMap extends FragmentActivity implements Observer {
+public class WaypointMap extends SherlockFragmentActivity implements Observer {
 	/** Logger tag. */
 	private static final String TAG = WaypointMap.class.getName();
 	/** Initial map zoom. */
@@ -96,6 +97,7 @@ public class WaypointMap extends FragmentActivity implements Observer {
 	private static final String BUNDLE_LONGITUDE = "org.unchiujar.jane.longitude";
 	/** Constant used for saving the zoom level between screen rotations. */
 	private static final String BUNDLE_ZOOM = "org.unchiujar.jane.zoom";
+	private static final String BUNDLE_WAYPOINT_EDITING = "org.unchiujar.jane.waypoint_edit";
 
 	/**
 	 * Intent named used for starting the location service
@@ -223,6 +225,22 @@ public class WaypointMap extends FragmentActivity implements Observer {
 	};
 	private WaypointManager waypointManager;
 	private GoogleMap mMap;
+	private boolean waypointModeActive;
+
+	private OnMapClickListener waypointAddListener = new OnMapClickListener() {
+
+		@Override
+		public void onMapClick(LatLng latLng) {
+			Log.d(TAG, "Map clicked at location: " + latLng.toString());
+			if (waypointModeActive) {
+				// TODO replace location with latlng ?
+				Location location = new Location("fake");
+				location.setLatitude(latLng.latitude);
+				location.setLongitude(latLng.longitude);
+				waypointManager.addWaypoint(new Waypoint(location, false));
+			}
+		}
+	};
 
 	// ==================== LIFECYCLE METHODS ====================
 
@@ -246,6 +264,7 @@ public class WaypointMap extends FragmentActivity implements Observer {
 		mMap = ((SupportMapFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.mapview)).getMap();
 
+		mMap.setOnMapClickListener(waypointAddListener);
 		waypointManager = new WaypointManager();
 
 		waypointManager.addObserver(this);
@@ -261,10 +280,11 @@ public class WaypointMap extends FragmentActivity implements Observer {
 		// check we still have access to GPS info
 		checkConnectivity();
 
+		update(waypointManager, new MarkerMessage(null, 0, MarkerMessage.State.ADD_MULTIPLE));
 	}
 
 	/**
-	 * Loads a gpx data from a file path send through an intent.
+	 * Loads waypoints data from a file path send through an intent.
 	 */
 	private void loadFileFromIntent() {
 		Intent intent = getIntent();
@@ -309,6 +329,8 @@ public class WaypointMap extends FragmentActivity implements Observer {
 		mCurrentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
 		mCurrentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE);
 		mCurrentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
+		waypointModeActive = savedInstanceState
+				.getBoolean(BUNDLE_WAYPOINT_EDITING);
 		// TODO set zoom on load
 
 		super.onRestoreInstanceState(savedInstanceState);
@@ -325,6 +347,7 @@ public class WaypointMap extends FragmentActivity implements Observer {
 		outState.putDouble(BUNDLE_ACCURACY, mCurrentAccuracy);
 		outState.putDouble(BUNDLE_LATITUDE, mCurrentLat);
 		outState.putDouble(BUNDLE_LONGITUDE, mCurrentLong);
+		outState.putBoolean(BUNDLE_WAYPOINT_EDITING, waypointModeActive);
 		// MapView mapView = (MapView) findViewById(R.id.mapview);
 		// TODO save zoom level on app going to background
 		// outState.putInt(BUNDLE_ZOOM, mapView.getZoomLevel());
@@ -425,21 +448,27 @@ public class WaypointMap extends FragmentActivity implements Observer {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		boolean result = super.onCreateOptionsMenu(menu);
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.layout.menu, menu);
-		menu.findItem(R.id.where_am_i).setIcon(
-				android.R.drawable.ic_menu_mylocation);
-		
-		menu.findItem(R.id.add_waypoint).setIcon(
-				android.R.drawable.star_on);
-		
-		menu.findItem(R.id.settings).setIcon(
-				android.R.drawable.ic_menu_preferences);
-		menu.findItem(R.id.help).setIcon(android.R.drawable.ic_menu_help);
-		menu.findItem(R.id.exit).setIcon(
-				android.R.drawable.ic_menu_close_clear_cancel);
+		displayMenu(menu);
+		return result;
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		boolean result = super.onPrepareOptionsMenu(menu);
+		displayMenu(menu);
 
 		return result;
+	}
+
+	private void displayMenu(Menu menu) {
+		MenuInflater inflater = getSupportMenuInflater();
+		menu.clear();
+
+		if (waypointModeActive) {
+			inflater.inflate(R.layout.add_waypoint, menu);
+		} else {
+			inflater.inflate(R.layout.menu, menu);
+		}
 	}
 
 	/*
@@ -457,6 +486,18 @@ public class WaypointMap extends FragmentActivity implements Observer {
 			// TODO implement moving to current location
 			// TODO redraw overlay
 			return true;
+		case R.id.add_waypoint:
+			Log.d(TAG, "Add waypoint clicked in action bar.");
+			waypointModeActive = true;
+			invalidateOptionsMenu();
+			return true;
+
+		case R.id.done_waypoints:
+			Log.d(TAG, "Add waypoint clicked in action bar.");
+			waypointModeActive = false;
+			invalidateOptionsMenu();
+			return true;
+
 		case R.id.help:
 			Log.d(TAG, "Showing help...");
 			Intent helpIntent = new Intent(this, Help.class);
@@ -587,10 +628,8 @@ public class WaypointMap extends FragmentActivity implements Observer {
 			// Nothing special to do if the service
 			// has crashed.
 		}
-
 	}
 
-	
 	private TreeMap<Integer, Marker> markers = new TreeMap<Integer, Marker>();
 
 	@Override
@@ -598,11 +637,11 @@ public class WaypointMap extends FragmentActivity implements Observer {
 		Log.d(TAG, "Message received" + data.toString());
 		Waypoint waypoint = ((MarkerMessage) data).getWaypoint();
 		State state = ((MarkerMessage) data).getState();
-
+		int index = ((MarkerMessage) data).getIndex();
 		switch (state) {
 		case DELETE_ALL:
 			for (Marker marker : markers.values()) {
-				//remove from map
+				// remove from map
 				marker.remove();
 			}
 			markers.clear();
@@ -613,19 +652,18 @@ public class WaypointMap extends FragmentActivity implements Observer {
 			// list, create a marker for it and add it to the list
 			for (Waypoint point : waypoints) {
 
-				if (markers.get(point.getIndex()) == null)
-					markers.put(point.getIndex(),
-							createMarkerFromWaypoint(point));
+				if (markers.get(index) == null)
+					markers.put(index, createMarkerFromWaypoint(point));
 			}
 			break;
 		case ADD:
-			markers.put(waypoint.getIndex(), createMarkerFromWaypoint(waypoint));
+			markers.put(index, createMarkerFromWaypoint(waypoint));
 			break;
 		case DELETE:
 			// remove from map
-			markers.get(waypoint.getIndex()).remove();
+			markers.get(index).remove();
 			// remove from list
-			markers.remove(waypoint.getIndex());
+			markers.remove(index);
 			break;
 		case REACH:
 			// TODO change marker colour

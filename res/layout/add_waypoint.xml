@@ -30,53 +30,23 @@
     android:layout_height="wrap_content" >
 
     <item
-        android:id="@+id/where_am_i"
+        android:id="@+id/textView1"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:icon="@android:drawable/ic_menu_mylocation"
+        android:layout_height="fill_parent"
+        android:layout_gravity="left"
         android:menuCategory="container"
         android:showAsAction="always|withText"
-        android:title="@string/where_am_i"
+        android:title="Click on map to add waypoints"
         android:visible="true"/>
 
     <item
-        android:id="@+id/add_waypoint"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:icon="@android:drawable/star_on"
-        android:menuCategory="container"
-        android:showAsAction="ifRoom|withText"
-        android:title="Add Waypoints"
-        android:visible="true"/>
-
-    <item
-        android:id="@+id/settings"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:icon="@android:drawable/ic_menu_preferences"
-        android:menuCategory="container"
-        android:showAsAction="ifRoom|withText"
-        android:title="@string/settings"
-        android:visible="true"/>
-
-    <item
-        android:id="@+id/help"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:icon="@android:drawable/ic_menu_help"
-        android:menuCategory="container"
-        android:showAsAction="ifRoom|withText"
-        android:title="@string/help"
-        android:visible="true"/>
-
-    <item
-        android:id="@+id/exit"
+        android:id="@+id/done_waypoints"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:icon="@android:drawable/ic_menu_close_clear_cancel"
         android:menuCategory="container"
-        android:showAsAction="ifRoom|withText"
-        android:title="@string/exit"
+        android:showAsAction="always|withText"
+        android:title="Done"
         android:visible="true"/>
 
 </menu>

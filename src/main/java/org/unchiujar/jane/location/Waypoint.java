@@ -2,29 +2,21 @@ package org.unchiujar.jane.location;
 
 import android.location.Location;
 
-public class Waypoint extends ApproximateLocation implements Comparable<Waypoint> {
-	private int index;
+public class Waypoint extends ApproximateLocation  {
 	private boolean reached;
 	private String info;
 
-	public Waypoint(Location location, int index, boolean reached) {
-		this(location, index, reached, "");
+	
+	public Waypoint(Location location, boolean reached) {
+		this(location, reached, "");
 	}
 
-	public Waypoint(Location location, int index, boolean reached, String info) {
+	public Waypoint(Location location, boolean reached, String info) {
 		super(location);
-		this.index = index;
 		this.reached = reached;
 		this.info = info;
 	}
 
-	public int getIndex() {
-		return index;
-	}
-
-	public void setIndex(int index) {
-		this.index = index;
-	}
 
 	public boolean isReached() {
 		return reached;
@@ -46,7 +38,8 @@ public class Waypoint extends ApproximateLocation implements Comparable<Waypoint
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + index;
+		result = prime * result + ((info == null) ? 0 : info.hashCode());
+		result = prime * result + (reached ? 1231 : 1237);
 		return result;
 	}
 
@@ -59,22 +52,20 @@ public class Waypoint extends ApproximateLocation implements Comparable<Waypoint
 		if (getClass() != obj.getClass())
 			return false;
 		Waypoint other = (Waypoint) obj;
-		// waypoints are the same if they have the same index
-		if (index != other.index)
+		if (info == null) {
+			if (other.info != null)
+				return false;
+		} else if (!info.equals(other.info))
+			return false;
+		if (reached != other.reached)
 			return false;
 		return true;
 	}
 
 	@Override
-	public int compareTo(Waypoint another) {
-		return this.index - (((Waypoint) another).getIndex());
-	}
-
-	@Override
 	public String toString() {
-		return super.toString() + " Waypoint [index=" + index + ", reached=" + reached + ", info="
-				+ info + "]";
+		return "Waypoint [reached=" + reached + ", info=" + info
+				+ ", toString()=" + super.toString() + "]";
 	}
-
 	
 }

@@ -154,7 +154,6 @@ public class FolderSelectPreference extends Preference implements TextWatcher {
 								double latitude = 0;
 								double longitude = 0;
 								String info = null;
-								int index = 0;
 								// parse each row read
 								// if there is no info then add no info to the
 								// waypoint
@@ -170,12 +169,10 @@ public class FolderSelectPreference extends Preference implements TextWatcher {
 									if (data.length > 2) {
 										info = data[3];
 									}
-									index++;
 									Location location = new Location(FROM_FILE);
 									location.setLatitude(latitude);
 									location.setLongitude(longitude);
-									Waypoint point = new Waypoint(location,
-											index, false);
+									Waypoint point = new Waypoint(location, false);
 									point.setInfo(info);
 									waypoints.add(point);
 								}

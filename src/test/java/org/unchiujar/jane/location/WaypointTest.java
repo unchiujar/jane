@@ -22,19 +22,18 @@ public class WaypointTest {
 		location.setLatitude(32);
 		location.setLongitude(42);
 		location.setAltitude(32.4);
-		Waypoint wayPoint = new Waypoint(location, 1, false);
+		Waypoint wayPoint = new Waypoint(location, false);
 
 		assertEquals(location.getLatitude(), wayPoint.getLatitude(), 0);
 		assertEquals(location.getLongitude(), wayPoint.getLongitude(), 0);
 		assertEquals(location.getAltitude(), wayPoint.getAltitude(), 0);
-		assertEquals(1, wayPoint.getIndex());
 		assertFalse(wayPoint.isReached());
 	}
 
 	@Test
 	public void reaching() throws Exception {
 		Location location = new Location(TEST_PROVIDER);
-		Waypoint wayPoint = new Waypoint(location, 1, false);
+		Waypoint wayPoint = new Waypoint(location, false);
 		// test for initial value
 		assertFalse(wayPoint.isReached());
 		wayPoint.setReached(true);
@@ -47,22 +46,11 @@ public class WaypointTest {
 		location.setLatitude(32);
 		location.setLongitude(42);
 		location.setAltitude(32.4);
-		Waypoint wayPoint1 = new Waypoint(location, 1, false);
-		Waypoint wayPoint2 = new Waypoint(location, 1, false);
+		Waypoint wayPoint1 = new Waypoint(location, false);
+		Waypoint wayPoint2 = new Waypoint(location, false);
 
 		assertEquals(wayPoint1, wayPoint2);
 
-	}
-
-	@Test
-	public void indexInequality() throws Exception {
-		Location location = new Location(TEST_PROVIDER);
-		location.setLatitude(32);
-		location.setLongitude(42);
-		location.setAltitude(32.4);
-		Waypoint wayPoint1 = new Waypoint(location, 1, false);
-		Waypoint wayPoint2 = new Waypoint(location, 2, false);
-		assertFalse(wayPoint1.equals(wayPoint2));
 	}
 
 	@Test
@@ -71,9 +59,9 @@ public class WaypointTest {
 		location.setLatitude(32);
 		location.setLongitude(42);
 		location.setAltitude(32.4);
-		Waypoint wayPoint1 = new Waypoint(location, 1, false);
+		Waypoint wayPoint1 = new Waypoint(location, false);
 		location.setLatitude(12);
-		Waypoint wayPoint2 = new Waypoint(location, 2, false);
+		Waypoint wayPoint2 = new Waypoint(location, false);
 		assertFalse(wayPoint1.equals(wayPoint2));
 	}
 
@@ -83,9 +71,9 @@ public class WaypointTest {
 		location.setLatitude(32);
 		location.setLongitude(42);
 		location.setAltitude(32.4);
-		Waypoint wayPoint1 = new Waypoint(location, 1, false);
+		Waypoint wayPoint1 = new Waypoint(location, false);
 		location.setLongitude(12);
-		Waypoint wayPoint2 = new Waypoint(location, 2, false);
+		Waypoint wayPoint2 = new Waypoint(location, false);
 		assertFalse(wayPoint1.equals(wayPoint2));
 	}
 
@@ -95,31 +83,10 @@ public class WaypointTest {
 		location.setLatitude(32);
 		location.setLongitude(42);
 		location.setAltitude(32.4);
-		Waypoint wayPoint1 = new Waypoint(location, 1, false);
+		Waypoint wayPoint1 = new Waypoint(location, false);
 		location.setAltitude(12);
-		Waypoint wayPoint2 = new Waypoint(location, 2, false);
+		Waypoint wayPoint2 = new Waypoint(location, false);
 		assertFalse(wayPoint1.equals(wayPoint2));
-	}
-
-	@Test
-	public void compareEquals() throws Exception {
-		Waypoint wayPoint1 = new Waypoint(new Location(TEST_PROVIDER), 2, false);
-		Waypoint wayPoint2 = new Waypoint(new Location(TEST_PROVIDER), 2, false);
-		assertEquals(0, wayPoint1.compareTo(wayPoint2));
-	}
-
-	@Test
-	public void compareLess() throws Exception {
-		Waypoint wayPoint1 = new Waypoint(new Location(TEST_PROVIDER), 1, false);
-		Waypoint wayPoint2 = new Waypoint(new Location(TEST_PROVIDER), 2, false);
-		assertEquals(-1, wayPoint1.compareTo(wayPoint2));
-	}
-
-	@Test
-	public void compareMore() throws Exception {
-		Waypoint wayPoint1 = new Waypoint(new Location(TEST_PROVIDER), 5, false);
-		Waypoint wayPoint2 = new Waypoint(new Location(TEST_PROVIDER), 2, false);
-		assertEquals(3, wayPoint1.compareTo(wayPoint2));
 	}
 
 }

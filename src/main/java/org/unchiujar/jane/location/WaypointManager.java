@@ -1,12 +1,20 @@
 package org.unchiujar.jane.location;
 
+import static org.unchiujar.jane.location.WaypointManager.MarkerMessage.State.ADD;
+import static org.unchiujar.jane.location.WaypointManager.MarkerMessage.State.ADD_MULTIPLE;
+import static org.unchiujar.jane.location.WaypointManager.MarkerMessage.State.DELETE;
+import static org.unchiujar.jane.location.WaypointManager.MarkerMessage.State.DELETE_ALL;
+import static org.unchiujar.jane.location.WaypointManager.MarkerMessage.State.REACH;
+
 import java.util.ArrayList;
-import static org.unchiujar.jane.location.WaypointManager.MarkerMessage.State.*;
 import java.util.List;
 import java.util.Observable;
 import java.util.TreeMap;
 
+import android.util.Log;
+
 public class WaypointManager extends Observable {
+	private static final String TAG = WaypointManager.class.getName();
 	private TreeMap<Integer, Waypoint> waypoints;
 
 	public WaypointManager(List<Waypoint> waypoints) {
@@ -24,14 +32,17 @@ public class WaypointManager extends Observable {
 
 	public void setWaypoints(List<Waypoint> waypoints) {
 		this.waypoints.clear();
+		setChanged();
 		addWaypoints(waypoints);
 	}
 
 	public void addWaypoints(List<Waypoint> waypoints) {
+		int i = 0;
 		for (Waypoint waypoint : waypoints) {
-			this.waypoints.put(waypoint.getIndex(), waypoint);
+			this.waypoints.put(i++, waypoint);
 		}
-		notifyObservers(new MarkerMessage(null, ADD_MULTIPLE));
+		setChanged();
+		notifyObservers(new MarkerMessage(null, -1, ADD_MULTIPLE));
 	}
 
 	public Waypoint getWaypoint(int index) throws WaypointNotFoundException {
@@ -39,24 +50,37 @@ public class WaypointManager extends Observable {
 	}
 
 	public void addWaypoint(Waypoint waypoint) {
-		waypoints.put(waypoint.getIndex(), waypoint);
-		notifyObservers(new MarkerMessage(waypoint, ADD));
+		Log.d(TAG, "Adding waypoint: " + waypoint.toString());
+		// check if there is at least an element, if not add one
+		// if there is at least an element get the highest key and increment
+		if (waypoints.size() > 0) {
+			waypoints.put(waypoints.lastKey() + 1, waypoint);
+		} else {
+			waypoints.put(0, waypoint);
+
+		}
+		setChanged();
+		notifyObservers(new MarkerMessage(waypoint, waypoints.lastKey(), ADD));
 	}
 
 	public void deleteWaypoint(int index) throws WaypointNotFoundException {
-		notifyObservers(new MarkerMessage(getWaypoint(index), DELETE));
+		setChanged();
+		notifyObservers(new MarkerMessage(getWaypoint(index), index, DELETE));
 		waypoints.remove(index);
 	}
 
 	public void markReached(int index) throws WaypointNotFoundException {
 		getWaypointSafely(index).setReached(true);
-		notifyObservers(new MarkerMessage(getWaypoint(index), REACH));
+		setChanged();
+		notifyObservers(new MarkerMessage(getWaypoint(index), index, REACH));
 	}
 
 	public void deleteAllWaypoints() {
 		waypoints.clear();
-		//send a message with no waypoint data stating all markers have been deleted
-		notifyObservers(new MarkerMessage(null, DELETE_ALL));
+		setChanged();
+		// send a message with no waypoint data stating all markers have been
+		// deleted
+		notifyObservers(new MarkerMessage(null, -1, DELETE_ALL));
 	}
 
 	public int getSize() {
@@ -73,33 +97,40 @@ public class WaypointManager extends Observable {
 				"Waypoint with the specified index could not be found:" + index);
 	}
 
-	
 	public static class MarkerMessage {
 		public enum State {
 			DELETE, ADD, REACH, DELETE_ALL, ADD_MULTIPLE
 		}
+
 		private Waypoint waypoint;
+		private int index;
 		private State state;
 
-		public MarkerMessage(Waypoint waypoint, State state) {
+		public MarkerMessage(Waypoint waypoint, int index, State state) {
 			this.waypoint = waypoint;
 			this.state = state;
+			this.index = index;
 		}
 
 		public Waypoint getWaypoint() {
 			return waypoint;
 		}
-		
+
 		public State getState() {
 			return state;
 		}
 
+		public int getIndex() {
+			return index;
+		}
+
 		@Override
 		public String toString() {
-			return "MarkerMessage [waypoint=" + waypoint.toString() + ", state=" + state
-					+ "]";
+			return "MarkerMessage [waypoint=" + waypoint + ", index=" + index
+					+ ", state=" + state + "]";
 		}
-	
+
+		
 		
 	}
 

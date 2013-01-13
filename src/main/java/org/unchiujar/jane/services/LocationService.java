@@ -55,7 +55,7 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 public class LocationService extends Service {
-    private static final int APPLICATION_ID = 1241241;
+    private static final int APPLICATION_ID = 2132413431;
     private NotificationManager notificationManager;
 
     private static final String TAG = LocationService.class.getName();
