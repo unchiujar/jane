@@ -27,7 +27,10 @@
 
 package org.unchiujar.jane.activities;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
@@ -64,6 +67,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
@@ -75,6 +79,8 @@ import com.actionbarsherlock.view.MenuItem;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -87,7 +93,9 @@ import com.google.android.gms.maps.model.PolylineOptions;
  * @author Vasile Jureschi
  * @see LocationService
  */
-public class WaypointMap extends SherlockFragmentActivity implements Observer {
+public class WaypointMap extends SherlockFragmentActivity implements Observer,
+		TextToSpeech.OnInitListener {
+	private static final int ANNOUNCEMENT_INTERVAL = 120000;
 	/** Logger tag. */
 	private static final String TAG = WaypointMap.class.getName();
 	/** Initial map zoom. */
@@ -128,6 +136,8 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 	/** Current location accuracy . Updated on every location change. */
 	private double mCurrentAccuracy;
 
+	private Location mCurrentLocation;
+
 	/**
 	 * Flag signaling if the application is visible. Used to stop overlay
 	 * updates if the map is currently not visible.
@@ -152,22 +162,105 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 	private SharedPreferences mSettings;
 	private SupportMapFragment mMapFragment;
 
+	private Marker currentLocationMarker;
+
+	private Handler handler = new Handler();
+
+	private Runnable announcer = new Runnable() {
+
+		public void run() {
+			try {
+				Waypoint nextPoint = waypointManager.getFirstUnreached();
+				float speed = mCurrentLocation.getSpeed();
+				// calculate distance
+				float distance = nextPoint.distanceTo(mCurrentLocation);
+				// calculate relative bearing [0, 360]
+				Log.d(TAG,"Device bearing: " + mCurrentLocation.getBearing());
+				Log.d(TAG,"Current location to waypoint bearing : " + mCurrentLocation.bearingTo(nextPoint));
+				float bearing = (mCurrentLocation.bearingTo(nextPoint) - mCurrentLocation
+						.getBearing()) / 2 + 180;
+				Log.d(TAG, "Relative bearing:" + bearing);
+				// transform bearing from degrees to hours
+				bearing = (int) (bearing / 360 * 12);
+				// calculate ETA
+				float eta = -1;
+				if (speed != 0) {
+					eta = distance / speed;
+				}
+
+				// assemble text
+				String announcement = constructAnnouncement(distance, bearing,
+						eta, speed);
+
+				tts.speak(announcement, TextToSpeech.QUEUE_FLUSH, null);
+			} catch (WaypointNotFoundException e) {
+				Log.d(TAG, "No next point found, doing nothing");
+			}
+
+			handler.postDelayed(announcer, ANNOUNCEMENT_INTERVAL);
+		}
+
+		private String constructAnnouncement(float distance, float bearing,
+				float eta, float speed) {
+			// Waypoint is at [bearing] o'clock.
+			// Distance to waypoint is [distance] with an E.T.A of
+			// [hours, minutes, seconds] at the current speed of
+			// [] kilometers per hour
+			StringBuilder announcement = new StringBuilder();
+			announcement.append("Waypoint is at " + ((int) bearing + 1)
+					+ " o'clock. ");
+
+			// calculate kilometers
+			int kilometers = (int) (distance / 1000);
+			int meters = (int) (distance - kilometers * 1000);
+			//
+			announcement.append("Distance to waypoint is "
+					+ ((kilometers > 0) ? kilometers + " kilometers" : "")
+					+ ((meters > 0) ? meters + " meters" : ""));
+			// only add eta if we have a speed
+			if (eta > -1) {
+				// calculate hours, minutes, seconds
+				int hours = (int) (eta / 60 / 60);
+				int minutes = (int) ((eta - hours * 60 * 60) / 60);
+				int seconds = (int) (eta - hours * 60 * 60 - minutes * 60);
+
+				announcement.append(" with an E.T.A. of "
+						+ ((hours > 0) ? hours + " hours " : "")
+						+ ((minutes > 0) ? minutes + " minutes " : "")
+						+ ((seconds > 0) ? seconds + " seconds " : ""));
+
+				DecimalFormat formattedSpeed = new DecimalFormat("###.##");
+				formattedSpeed.setRoundingMode(RoundingMode.FLOOR);
+				// calculate speed in km/h
+				announcement.append(" at the current speed of " + formattedSpeed.format(speed * 3.6)
+						+ " kilometers per hour.");
+			} else {
+				announcement
+						.append(" with an unknown E.T.A. as there is no speed information.");
+			}
+			return announcement.toString();
+		}
+
+	};
+
 	/**
 	 * Handler of incoming messages from service.
 	 */
 	private class IncomingHandler extends Handler {
+
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case LocationService.MSG_LOCATION_CHANGED:
 				if (msg.obj != null) {
 					Log.d(TAG, ((Location) msg.obj).toString());
-
+					mCurrentLocation = ((Location) msg.obj);
 					mCurrentLat = ((Location) msg.obj).getLatitude();
 					mCurrentLong = ((Location) msg.obj).getLongitude();
 					mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
 					// TODO redraw the overlay ???
-					// redrawOverlay();
+					redrawMarker();
+					waypointController.update((Location) msg.obj);
 
 				} else {
 					Log.d(TAG, "Null object received");
@@ -229,6 +322,8 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 		}
 	};
 	private WaypointManager waypointManager;
+	private WaypointController waypointController;
+
 	private GoogleMap mMap;
 	private boolean waypointModeActive;
 
@@ -246,6 +341,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 			}
 		}
 	};
+	private TextToSpeech tts;
 
 	// ==================== LIFECYCLE METHODS ====================
 
@@ -271,10 +367,9 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 
 		mMap.setOnMapClickListener(waypointAddListener);
 		waypointManager = new WaypointManager();
-
+		waypointController = new WaypointController(waypointManager);
 		waypointManager.addObserver(this);
 		// TODO set initial/remembered map zoom
-
 		Marker marker = mMap.addMarker(new MarkerOptions()
 				.position(new LatLng(37.7750, 122.4183)).title("San Francisco")
 				.snippet("Population: 776733"));
@@ -287,6 +382,12 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 
 		update(waypointManager, new MarkerMessage(null, 0,
 				MarkerMessage.State.ADD_MULTIPLE));
+		// initialize text to speech
+		tts = new TextToSpeech(this, this);
+
+		// announce at fixed intervals
+		handler.postDelayed(announcer, ANNOUNCEMENT_INTERVAL);
+
 	}
 
 	/**
@@ -440,7 +541,10 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-
+		if (tts != null) {
+			tts.stop();
+			tts.shutdown();
+		}
 		Log.d(TAG, "onDestroy completed.");
 	}
 
@@ -639,6 +743,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 	private final TreeMap<Integer, Marker> markers = new TreeMap<Integer, Marker>();
 	private Polyline mReachedPath;
 	private Polyline mUnreachedPath;
+	private Polyline lineToWaypoint;
 
 	@Override
 	public void update(Observable observable, Object data) {
@@ -674,8 +779,13 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 			markers.remove(index);
 			break;
 		case REACH:
-			// TODO change marker colour
-			Log.e(TAG, "Marker reached  colour change not implemented");
+			// remove and add as the icon cannot be changed after creation
+			markers.get(index).remove();
+			// remove from list
+			markers.remove(index);
+			markers.put(index, createMarkerFromWaypoint(waypoint));
+			Log.d(TAG, "Marker reached  changing colour");
+			announceReached();
 			break;
 		default:
 			Log.e(TAG,
@@ -723,11 +833,74 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer {
 					latLngsReached.get(latLngsReached.size() - 1));
 		}
 		mUnreachedPath.setPoints(latLngsUnreached);
+
+		// also redraw current location marker
+		redrawMarker();
+	}
+
+	private void announceReached() {
+		tts.speak("Waypoint reached.", TextToSpeech.QUEUE_FLUSH, null);
 	}
 
 	private Marker createMarkerFromWaypoint(Waypoint waypoint) {
-		return mMap.addMarker(new MarkerOptions().position(
-				LocationUtilities.locationToLatLng(waypoint)).title(
-				waypoint.getInfo()));
+		BitmapDescriptor icon;
+		if (waypoint.isReached()) {
+			icon = BitmapDescriptorFactory
+					.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+		} else {
+			icon = BitmapDescriptorFactory
+					.defaultMarker(BitmapDescriptorFactory.HUE_RED);
+		}
+		return mMap.addMarker(new MarkerOptions()
+				.position(LocationUtilities.locationToLatLng(waypoint))
+				.title(waypoint.getInfo()).icon(icon));
+	}
+
+	private void redrawMarker() {
+		if (currentLocationMarker != null) {
+			currentLocationMarker.remove();
+		}
+		LatLng current = new LatLng(mCurrentLat, mCurrentLong);
+		currentLocationMarker = mMap.addMarker(new MarkerOptions()
+				.position(current)
+				.title("Current location")
+				.icon(BitmapDescriptorFactory
+						.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
+		if (lineToWaypoint != null) {
+			lineToWaypoint.remove();
+		}
+
+		try {
+			final Waypoint point = waypointManager.getFirstUnreached();
+			final LatLng unreached = new LatLng(point.getLatitude(),
+					point.getLongitude());
+			lineToWaypoint = mMap.addPolyline(new PolylineOptions()
+					.add(current, unreached).width(5).color(Color.BLUE));
+
+		} catch (WaypointNotFoundException e) {
+			Log.d(TAG, "No unexplored waypoint found, not drawing line.");
+		}
+	}
+
+	// Text to speech initialization
+
+	public void onInit(int status) {
+		if (status == TextToSpeech.SUCCESS) {
+
+			int result = tts.setLanguage(Locale.US);
+
+			if (result == TextToSpeech.LANG_MISSING_DATA
+					|| result == TextToSpeech.LANG_NOT_SUPPORTED) {
+				// DISPLAY dialog maybe ?
+
+				Log.e(TAG, "This Language is not supported");
+			} else {
+				Log.d(TAG, "TTS Initialization succesful");
+			}
+
+		} else {
+			Log.e(TAG, "TTS Initialization failed!");
+		}
 	}
 }

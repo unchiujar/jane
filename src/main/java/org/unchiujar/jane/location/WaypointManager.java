@@ -7,8 +7,10 @@ import static org.unchiujar.jane.location.WaypointManager.MarkerMessage.State.DE
 import static org.unchiujar.jane.location.WaypointManager.MarkerMessage.State.REACH;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Observable;
+import java.util.Set;
 import java.util.TreeMap;
 
 import android.util.Log;
@@ -75,6 +77,34 @@ public class WaypointManager extends Observable {
 		notifyObservers(new MarkerMessage(getWaypoint(index), index, REACH));
 	}
 
+	/**
+	 * Marks the first unreached waypoint as reached.
+	 */
+	public void markCurrentReached() {
+		Set<Integer> keys = waypoints.keySet();
+		Iterator<Integer> iterator = keys.iterator();
+		for (Waypoint point : waypoints.values()) {
+			if (!point.isReached()) {
+				point.setReached(true);
+				setChanged();
+				notifyObservers(new MarkerMessage(point, iterator.next(), REACH));
+				break;
+			}
+			iterator.next();
+		}
+
+	}
+
+	public Waypoint getFirstUnreached() throws WaypointNotFoundException {
+		for (Waypoint point : waypoints.values()) {
+			if (!point.isReached()) {
+				return point;
+			}
+		}
+		throw new WaypointNotFoundException(
+				"No unreached waypoint has been found.");
+	}
+
 	public void deleteAllWaypoints() {
 		waypoints.clear();
 		setChanged();
@@ -130,8 +160,6 @@ public class WaypointManager extends Observable {
 					+ ", state=" + state + "]";
 		}
 
-		
-		
 	}
 
 }
