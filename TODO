@@ -1,5 +1,4 @@
-save zoom on application exit 
-add option to move to current location
+save zoom and location on application exit 
 fix bearing
 add waypoint edit/delete
 add announcer frequency selection option
