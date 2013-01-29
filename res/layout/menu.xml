@@ -30,16 +30,6 @@
     android:layout_height="wrap_content" >
 
     <item
-        android:id="@+id/where_am_i"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:icon="@android:drawable/ic_menu_mylocation"
-        android:menuCategory="container"
-        android:showAsAction="always|withText"
-        android:title="@string/where_am_i"
-        android:visible="true"/>
-
-    <item
         android:id="@+id/add_waypoint"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
