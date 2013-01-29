@@ -95,7 +95,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
  */
 public class WaypointMap extends SherlockFragmentActivity implements Observer,
 		TextToSpeech.OnInitListener {
-	private static final int ANNOUNCEMENT_INTERVAL = 120000;
+	private static final int ANNOUNCEMENT_INTERVAL = 20000;
 	/** Logger tag. */
 	private static final String TAG = WaypointMap.class.getName();
 	/** Initial map zoom. */
@@ -176,8 +176,10 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 				float distance = nextPoint.distanceTo(mCurrentLocation);
 				// calculate relative bearing [0, 360]
 				Log.d(TAG,"Device bearing: " + mCurrentLocation.getBearing());
-				Log.d(TAG,"Current location to waypoint bearing : " + mCurrentLocation.bearingTo(nextPoint));
-				float bearing = (mCurrentLocation.bearingTo(nextPoint) - mCurrentLocation
+                //bearingTo(..) gets values in the range [-180, 180] while getBearing(...) gets (0.0,360]
+                //cause fuck you, that's why principle of least surprise  
+				Log.d(TAG,"Current location to waypoint bearing : " + mCurrentLocation.bearingTo(nextPoint));               
+				float bearing = (360 + mCurrentLocation.bearingTo(nextPoint) - mCurrentLocation
 						.getBearing()) / 2 + 180;
 				Log.d(TAG, "Relative bearing:" + bearing);
 				// transform bearing from degrees to hours
