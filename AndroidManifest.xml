@@ -93,7 +93,7 @@
             android:name=".services.LocationService"
             android:permission="android.permission.ACCESS_FINE_LOCATION" >
             <intent-filter>
-                <action android:name="org.com.unchiujar.LocationService" />
+                <action android:name="org.com.unchiujar.jane.services.LocationService" />
             </intent-filter>
         </service>
 
