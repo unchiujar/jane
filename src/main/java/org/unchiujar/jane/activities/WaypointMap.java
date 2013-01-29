@@ -76,6 +76,7 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -175,10 +176,11 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 				// calculate distance
 				float distance = nextPoint.distanceTo(mCurrentLocation);
 				// calculate relative bearing [0, 360]
-				Log.d(TAG,"Device bearing: " + mCurrentLocation.getBearing());
-				Log.d(TAG,"Current location to waypoint bearing : " + mCurrentLocation.bearingTo(nextPoint));
-				float bearing = (mCurrentLocation.bearingTo(nextPoint) - mCurrentLocation
-						.getBearing()) / 2 + 180;
+				Log.d(TAG, "Device bearing: " + mCurrentLocation.getBearing());
+				Log.d(TAG, "Current location to waypoint bearing : "
+						+ mCurrentLocation.bearingTo(nextPoint));
+				float bearing = 180 - (mCurrentLocation.bearingTo(nextPoint) - mCurrentLocation
+						.getBearing()) / 2;
 				Log.d(TAG, "Relative bearing:" + bearing);
 				// transform bearing from degrees to hours
 				bearing = (int) (bearing / 360 * 12);
@@ -232,7 +234,8 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 				DecimalFormat formattedSpeed = new DecimalFormat("###.##");
 				formattedSpeed.setRoundingMode(RoundingMode.FLOOR);
 				// calculate speed in km/h
-				announcement.append(" at the current speed of " + formattedSpeed.format(speed * 3.6)
+				announcement.append(" at the current speed of "
+						+ formattedSpeed.format(speed * 3.6)
 						+ " kilometers per hour.");
 			} else {
 				announcement
@@ -259,7 +262,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 					mCurrentLong = ((Location) msg.obj).getLongitude();
 					mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
 					// TODO redraw the overlay ???
-					redrawMarker();
+					redrawCurrentPath();
 					waypointController.update((Location) msg.obj);
 
 				} else {
@@ -388,6 +391,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 		// announce at fixed intervals
 		handler.postDelayed(announcer, ANNOUNCEMENT_INTERVAL);
 
+		mMap.setMyLocationEnabled(true);
 	}
 
 	/**
@@ -438,8 +442,12 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 		mCurrentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
 		waypointModeActive = savedInstanceState
 				.getBoolean(BUNDLE_WAYPOINT_EDITING);
-		// TODO set zoom on load
+//		mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(
+//				mCurrentLat, mCurrentLong), savedInstanceState
+//				.getFloat(BUNDLE_ZOOM)));
 
+		mMap.animateCamera(CameraUpdateFactory.zoomTo(savedInstanceState
+				.getFloat(BUNDLE_ZOOM)));
 		super.onRestoreInstanceState(savedInstanceState);
 	}
 
@@ -455,9 +463,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 		outState.putDouble(BUNDLE_LATITUDE, mCurrentLat);
 		outState.putDouble(BUNDLE_LONGITUDE, mCurrentLong);
 		outState.putBoolean(BUNDLE_WAYPOINT_EDITING, waypointModeActive);
-		// MapView mapView = (MapView) findViewById(R.id.mapview);
-		// TODO save zoom level on app going to background
-		// outState.putInt(BUNDLE_ZOOM, mapView.getZoomLevel());
+		outState.putFloat(BUNDLE_ZOOM, 5f);
 		super.onSaveInstanceState(outState);
 	}
 
@@ -590,12 +596,6 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle item selection
 		switch (item.getItemId()) {
-		case R.id.where_am_i:
-			Log.d(TAG,
-					"XXXXX NOT IMPLEMENTED XXXXX Moving to current location...");
-			// TODO implement moving to current location
-			// TODO redraw overlay
-			return true;
 		case R.id.add_waypoint:
 			Log.d(TAG, "Add waypoint clicked in action bar.");
 			waypointModeActive = true;
@@ -834,8 +834,8 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 		}
 		mUnreachedPath.setPoints(latLngsUnreached);
 
-		// also redraw current location marker
-		redrawMarker();
+		// also redraw line to current location
+		redrawCurrentPath();
 	}
 
 	private void announceReached() {
@@ -856,17 +856,9 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 				.title(waypoint.getInfo()).icon(icon));
 	}
 
-	private void redrawMarker() {
-		if (currentLocationMarker != null) {
-			currentLocationMarker.remove();
-		}
-		LatLng current = new LatLng(mCurrentLat, mCurrentLong);
-		currentLocationMarker = mMap.addMarker(new MarkerOptions()
-				.position(current)
-				.title("Current location")
-				.icon(BitmapDescriptorFactory
-						.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+	private void redrawCurrentPath() {
 
+		LatLng current = new LatLng(mCurrentLat, mCurrentLong);
 		if (lineToWaypoint != null) {
 			lineToWaypoint.remove();
 		}
