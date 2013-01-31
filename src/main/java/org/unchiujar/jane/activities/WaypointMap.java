@@ -177,11 +177,12 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 				float distance = nextPoint.distanceTo(mCurrentLocation);
 				// calculate relative bearing [0, 360]
 				Log.d(TAG, "Device bearing: " + mCurrentLocation.getBearing());
-                                //bearingTo(..) gets values in the range [-180, 180] while getBearing(...) gets (0.0,360]
-                                //cause fuck you, that's why principle of least surprise  
+				// bearingTo(..) gets values in the range [-180, 180] while
+				// getBearing(...) gets (0.0,360]
+				// cause fuck you, that's why principle of least surprise
 				Log.d(TAG, "Current location to waypoint bearing : "
 						+ mCurrentLocation.bearingTo(nextPoint));
-				float bearing = 180 - (mCurrentLocation.bearingTo(nextPoint) - mCurrentLocation
+				float bearing = 180 + (mCurrentLocation.bearingTo(nextPoint) - mCurrentLocation
 						.getBearing()) / 2;
 				Log.d(TAG, "Relative bearing:" + bearing);
 				// transform bearing from degrees to hours
@@ -264,7 +265,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 					mCurrentLong = ((Location) msg.obj).getLongitude();
 					mCurrentAccuracy = ((Location) msg.obj).getAccuracy();
 					// TODO redraw the overlay ???
-					redrawCurrentPath();
+					drawPathToNextWaypoint();
 					waypointController.update((Location) msg.obj);
 
 				} else {
@@ -375,9 +376,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 		waypointController = new WaypointController(waypointManager);
 		waypointManager.addObserver(this);
 		// TODO set initial/remembered map zoom
-		Marker marker = mMap.addMarker(new MarkerOptions()
-				.position(new LatLng(37.7750, 122.4183)).title("San Francisco")
-				.snippet("Population: 776733"));
+
 		Log.d(TAG, "onCreate completed: Activity created");
 		mLocationServiceIntent = new Intent(SERVICE_INTENT_NAME);
 		startService(mLocationServiceIntent);
@@ -394,6 +393,46 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 		handler.postDelayed(announcer, ANNOUNCEMENT_INTERVAL);
 
 		mMap.setMyLocationEnabled(true);
+
+		moveToLastLocation(savedInstanceState);
+		
+		mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+			
+			@Override
+			public void onMarkerDragStart(Marker arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void onMarkerDragEnd(Marker arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void onMarkerDrag(Marker arg0) {
+				drawPathsBetweenWaypoints();
+			}
+		});
+
+	}
+
+	private void moveToLastLocation(Bundle savedInstanceState) {
+		//only process if we have saved values
+		if (savedInstanceState == null) {
+			return;
+		}
+		// restore accuracy and coordinates from saved state
+		mCurrentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY, 0);
+		mCurrentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE, 0);
+		mCurrentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE, 0);
+		waypointModeActive = savedInstanceState
+				.getBoolean(BUNDLE_WAYPOINT_EDITING);
+
+		mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(
+				mCurrentLat, mCurrentLong), savedInstanceState.getFloat(
+				BUNDLE_ZOOM, 5)));
 	}
 
 	/**
@@ -438,18 +477,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 	 */
 	@Override
 	protected void onRestoreInstanceState(Bundle savedInstanceState) {
-		// restore accuracy and coordinates from saved state
-		mCurrentAccuracy = savedInstanceState.getDouble(BUNDLE_ACCURACY);
-		mCurrentLat = savedInstanceState.getDouble(BUNDLE_LATITUDE);
-		mCurrentLong = savedInstanceState.getDouble(BUNDLE_LONGITUDE);
-		waypointModeActive = savedInstanceState
-				.getBoolean(BUNDLE_WAYPOINT_EDITING);
-//		mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(
-//				mCurrentLat, mCurrentLong), savedInstanceState
-//				.getFloat(BUNDLE_ZOOM)));
-
-		mMap.animateCamera(CameraUpdateFactory.zoomTo(savedInstanceState
-				.getFloat(BUNDLE_ZOOM)));
+		moveToLastLocation(savedInstanceState);
 		super.onRestoreInstanceState(savedInstanceState);
 	}
 
@@ -630,7 +658,8 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 			return super.onOptionsItemSelected(item);
 		}
 	}
-
+	
+	
 	/**
 	 * Checks GPS and network connectivity. Displays a dialog asking the user to
 	 * start the GPS if not started and also displays a toast warning it no
@@ -795,6 +824,10 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 							+ data.toString());
 			break;
 		}
+		drawPathsBetweenWaypoints();
+	}
+	
+	private void drawPathsBetweenWaypoints() {
 		// only remove if previously has been added to map
 		// XXX hacky fix
 		if (mReachedPath != null) {
@@ -837,7 +870,7 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 		mUnreachedPath.setPoints(latLngsUnreached);
 
 		// also redraw line to current location
-		redrawCurrentPath();
+		drawPathToNextWaypoint();
 	}
 
 	private void announceReached() {
@@ -853,13 +886,15 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 			icon = BitmapDescriptorFactory
 					.defaultMarker(BitmapDescriptorFactory.HUE_RED);
 		}
-		return mMap.addMarker(new MarkerOptions()
+		Marker marker = mMap.addMarker(new MarkerOptions()
 				.position(LocationUtilities.locationToLatLng(waypoint))
 				.title(waypoint.getInfo()).icon(icon));
+		marker.setDraggable(true);
+		return marker;
 	}
 
-	private void redrawCurrentPath() {
-
+	private void drawPathToNextWaypoint() {
+		Log.d(TAG, "Drawing path to first unreached waypoint.");
 		LatLng current = new LatLng(mCurrentLat, mCurrentLong);
 		if (lineToWaypoint != null) {
 			lineToWaypoint.remove();
@@ -869,6 +904,8 @@ public class WaypointMap extends SherlockFragmentActivity implements Observer,
 			final Waypoint point = waypointManager.getFirstUnreached();
 			final LatLng unreached = new LatLng(point.getLatitude(),
 					point.getLongitude());
+			Log.d(TAG, "First unreached waypoint is at " + unreached.toString());
+
 			lineToWaypoint = mMap.addPolyline(new PolylineOptions()
 					.add(current, unreached).width(5).color(Color.BLUE));
 

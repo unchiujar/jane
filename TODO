@@ -3,3 +3,4 @@ fix bearing
 add waypoint edit/delete
 add announcer frequency selection option
 save waypoints on app exit or rotation
+save/load  waypoint lists 
