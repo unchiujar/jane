@@ -60,6 +60,6 @@
     <org.unchiujar.jane.preferences.FolderSelectPreference
         android:defaultValue="80"
         android:key="org.unchiujar.jane.settings.import_folder"
-        android:summary="Select folder containing GPX tracks." />
+        android:summary="Select folder containing waypoints." />
 
 </PreferenceScreen>

@@ -53,18 +53,20 @@
         android:layout_height="wrap_content"
         android:layout_below="@android:id/summary" >
         <AutoCompleteTextView
-            android:id="@+id/txtSelectGpxFolder"
-            android:layout_width="203dp"
+            android:id="@+id/txtSelectWaypointsFolder"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_weight="0.8"
             android:ems="10"
             android:hint="@string/select_locations_folder" >
             <requestFocus />
         </AutoCompleteTextView>
 
         <Button
-            android:id="@+id/btnLoadGpx"
+            android:id="@+id/btnLoadWaypoints"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_weight="0.8"
             android:text="@string/import_locations" />
     </LinearLayout>
 

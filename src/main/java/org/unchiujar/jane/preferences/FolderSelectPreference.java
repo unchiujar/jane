@@ -59,194 +59,188 @@ import android.widget.RelativeLayout;
 import au.com.bytecode.opencsv.CSVReader;
 
 public class FolderSelectPreference extends Preference implements TextWatcher {
-	private static final String FROM_FILE = "from_file";
-	private final String TAG = FolderSelectPreference.class.getName();
-	private static final String DEFAULT_VALUE = "/";
+    private static final String FROM_FILE = "from_file";
+    private final String TAG = FolderSelectPreference.class.getName();
+    private static final String DEFAULT_VALUE = "/";
 
-	private AutoCompleteTextView mTxtWaypointsFolder;
-	private Button mBtnLoadWaypoints;
+    private AutoCompleteTextView mTxtWaypointsFolder;
+    private Button mBtnLoadWaypoints;
 
-	private String mFolder;
-	private Context mContext;
+    private String mFolder;
+    private Context mContext;
 
-	public FolderSelectPreference(Context context, AttributeSet attrs) {
-		super(context, attrs);
-		initPreference(context, attrs);
+    public FolderSelectPreference(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        initPreference(context, attrs);
 
-	}
+    }
 
-	public FolderSelectPreference(Context context, AttributeSet attrs,
-			int defStyle) {
-		super(context, attrs, defStyle);
-		initPreference(context, attrs);
-	}
+    public FolderSelectPreference(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        initPreference(context, attrs);
+    }
 
-	private void initPreference(Context context, AttributeSet attrs) {
-		setValuesFromXml(attrs);
-		Log.d(TAG, "Init preferences.");
-		mContext = context;
-	}
+    private void initPreference(Context context, AttributeSet attrs) {
+        setValuesFromXml(attrs);
+        Log.d(TAG, "Init preferences.");
+        mContext = context;
+    }
 
-	private void setValuesFromXml(AttributeSet attrs) {
-		// mMaxValue = attrs.getAttributeIntValue(ANDROIDNS, "max", 255);
-	}
+    private void setValuesFromXml(AttributeSet attrs) {
+        // mMaxValue = attrs.getAttributeIntValue(ANDROIDNS, "max", 255);
+    }
 
-	@Override
-	protected View onCreateView(ViewGroup parent) {
+    @Override
+    protected View onCreateView(ViewGroup parent) {
 
-		LayoutInflater mInflater = (LayoutInflater) getContext()
-				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        LayoutInflater mInflater = (LayoutInflater) getContext().getSystemService(
+                Context.LAYOUT_INFLATER_SERVICE);
 
-		return (RelativeLayout) mInflater.inflate(R.xml.folder_import, parent,
-				false);
+        return mInflater.inflate(R.xml.folder_import, parent, false);
 
-	}
+    }
 
-	@Override
-	public void onBindView(View view) {
-		super.onBindView(view);
-		Log.d(TAG, "Binding view...");
-		mTxtWaypointsFolder = (AutoCompleteTextView) view
-				.findViewById(R.id.txtSelectGpxFolder);
-		mBtnLoadWaypoints = (Button) view.findViewById(R.id.btnLoadGpx);
+    @Override
+    public void onBindView(View view) {
+        super.onBindView(view);
+        Log.d(TAG, "Binding view...");
+        mTxtWaypointsFolder = (AutoCompleteTextView) view
+                .findViewById(R.id.txtSelectWaypointsFolder);
+        mBtnLoadWaypoints = (Button) view.findViewById(R.id.btnLoadWaypoints);
 
-		mTxtWaypointsFolder.addTextChangedListener(this);
-		mTxtWaypointsFolder.setText(mFolder);
+        mTxtWaypointsFolder.addTextChangedListener(this);
+        mTxtWaypointsFolder.setText(mFolder);
 
-		mBtnLoadWaypoints.setOnClickListener(new OnClickListener() {
+        mBtnLoadWaypoints.setOnClickListener(new OnClickListener() {
 
-			@Override
-			public void onClick(View v) {
-				// get list of gpx files from the folders
-				File path = new File(mTxtWaypointsFolder.getText().toString());
-				final ArrayList<File> waypointsFiles = new ArrayList<File>();
-				File[] files = path.listFiles();
-				for (File file : files) {
-					if (file.toString().toLowerCase().endsWith(".waypoints")) {
-						Log.d(TAG, "Found waypoints file: " + file.toString());
-						waypointsFiles.add(file);
-					}
-				}
+            @Override
+            public void onClick(View v) {
+                // get list of gpx files from the folders
+                File path = new File(mTxtWaypointsFolder.getText().toString());
+                final ArrayList<File> waypointsFiles = new ArrayList<File>();
+                File[] files = path.listFiles();
+                for (File file : files) {
+                    if (file.toString().toLowerCase().endsWith(".waypoints")) {
+                        Log.d(TAG, "Found waypoints file: " + file.toString());
+                        waypointsFiles.add(file);
+                    }
+                }
 
-				final ProgressDialog progress = new ProgressDialog(mContext);
+                final ProgressDialog progress = new ProgressDialog(mContext);
 
-				progress.setCancelable(false);
-				progress.setMax(waypointsFiles.size());
-				progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-				progress.setMessage(mContext
-						.getString(R.string.importing_locations));
+                progress.setCancelable(false);
+                progress.setMax(waypointsFiles.size());
+                progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                progress.setMessage(mContext.getString(R.string.importing_locations));
 
-				progress.show();
+                progress.show();
 
-				Runnable importer = new Runnable() {
+                Runnable importer = new Runnable() {
 
-					@Override
-					public void run() {
+                    @Override
+                    public void run() {
 
-						WaypointManager manager = ((JaneApplication) ((Activity) mContext)
-								.getApplication()).getWaypointManager();
-						ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
-						for (File file : waypointsFiles) {
-							try {
-								CSVReader reader = new CSVReader(
-										new FileReader(file));
-								List<String[]> raw = reader.readAll();
-								double latitude = 0;
-								double longitude = 0;
-								String info = null;
-								// parse each row read
-								// if there is no info then add no info to the
-								// waypoint
-								// XXX in case of multiple waypoint files the
-								// waypoint order is indeterminate
-								for (String[] data : raw) {
-									// latitude, longitude, optional info
+                        WaypointManager manager = ((JaneApplication) ((Activity) mContext)
+                                .getApplication()).getWaypointManager();
+                        ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
+                        for (File file : waypointsFiles) {
+                            try {
+                                CSVReader reader = new CSVReader(new FileReader(file));
+                                List<String[]> raw = reader.readAll();
+                                double latitude = 0;
+                                double longitude = 0;
+                                String info = null;
+                                // parse each row read
+                                // if there is no info then add no info to the
+                                // waypoint
+                                // XXX in case of multiple waypoint files the
+                                // waypoint order is indeterminate
+                                for (String[] data : raw) {
+                                    // latitude, longitude, optional info
 
-									latitude = Double.parseDouble(data[0]);
-									longitude = Double.parseDouble(data[1]);
-									// if there is no info just ignore the third
-									// position
-									if (data.length > 2) {
-										info = data[3];
-									}
-									Location location = new Location(FROM_FILE);
-									location.setLatitude(latitude);
-									location.setLongitude(longitude);
-									Waypoint point = new Waypoint(location, false);
-									point.setInfo(info);
-									waypoints.add(point);
-								}
-							} catch (FileNotFoundException e) {
-								Log.e(TAG, "Waypoints file not found" + file);
-							} catch (IOException e) {
-								Log.e(TAG, "Error reading from waypoints file "
-										+ file);
-							}
-							progress.incrementProgressBy(1);
-						}
-						// add all the waypoints at once to prevent extra work
-						manager.addWaypoints(waypoints);
-						progress.dismiss();
-					}
-				};
-				new Thread(importer).start();
+                                    latitude = Double.parseDouble(data[0]);
+                                    longitude = Double.parseDouble(data[1]);
+                                    // if there is no info just ignore the third
+                                    // position
+                                    if (data.length > 2) {
+                                        info = data[3];
+                                    }
+                                    Location location = new Location(FROM_FILE);
+                                    location.setLatitude(latitude);
+                                    location.setLongitude(longitude);
+                                    Waypoint point = new Waypoint(location, false);
+                                    point.setInfo(info);
+                                    waypoints.add(point);
+                                }
+                            } catch (FileNotFoundException e) {
+                                Log.e(TAG, "Waypoints file not found" + file);
+                            } catch (IOException e) {
+                                Log.e(TAG, "Error reading from waypoints file " + file);
+                            }
+                            progress.incrementProgressBy(1);
+                        }
+                        // add all the waypoints at once to prevent extra work
+                        manager.addWaypoints(waypoints);
+                        progress.dismiss();
+                    }
+                };
+                new Thread(importer).start();
 
-				Log.d(TAG, "Imported GPX data.");
-			}
-		});
-	}
+                Log.d(TAG, "Imported GPX data.");
+            }
+        });
+    }
 
-	@Override
-	protected void onSetInitialValue(boolean restoreValue, Object defaultValue) {
+    @Override
+    protected void onSetInitialValue(boolean restoreValue, Object defaultValue) {
 
-		if (restoreValue) {
-			mFolder = getPersistedString(DEFAULT_VALUE);
-		} else {
-			mFolder = (String) defaultValue;
-			persistString(mFolder);
-		}
+        if (restoreValue) {
+            mFolder = getPersistedString(DEFAULT_VALUE);
+        } else {
+            mFolder = (String) defaultValue;
+            persistString(mFolder);
+        }
 
-	}
+    }
 
-	@Override
-	public void onTextChanged(CharSequence s, int start, int before, int count) {
-		// NO-OP
-	}
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+        // NO-OP
+    }
 
-	@Override
-	public void beforeTextChanged(CharSequence s, int start, int count,
-			int after) {
-		// NO-OP
-	}
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        // NO-OP
+    }
 
-	@Override
-	public void afterTextChanged(Editable s) {
-		mFolder = s.toString();
+    @Override
+    public void afterTextChanged(Editable s) {
+        mFolder = s.toString();
 
-		ArrayList<String> folders = new ArrayList<String>();
-		// create array of folders
-		File path = new File(mFolder);
-		// if it is a path create array of folders
-		File[] files = path.listFiles();
+        ArrayList<String> folders = new ArrayList<String>();
+        // create array of folders
+        File path = new File(mFolder);
+        // if it is a path create array of folders
+        File[] files = path.listFiles();
 
-		if (path.isDirectory() && files != null) {
-			for (File file : files) {
-				if (file.isDirectory()) {
-					folders.add(file.getAbsolutePath());
-				}
-			}
-		}
-		Log.v(TAG, "Folders found for autocomplete:" + folders);
-		ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext,
-				android.R.layout.simple_dropdown_item_1line, folders);
+        if (path.isDirectory() && files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    folders.add(file.getAbsolutePath());
+                }
+            }
+        }
+        Log.v(TAG, "Folders found for autocomplete:" + folders);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext,
+                android.R.layout.simple_dropdown_item_1line, folders);
 
-		mTxtWaypointsFolder.setAdapter(adapter);
-		// display the dropdown only if there is a list of folders
-		// to select from
-		if (folders.size() > 0) {
-			mTxtWaypointsFolder.showDropDown();
-		}
-		persistString(mFolder);
-	}
+        mTxtWaypointsFolder.setAdapter(adapter);
+        // display the dropdown only if there is a list of folders
+        // to select from
+        if (folders.size() > 0) {
+            mTxtWaypointsFolder.showDropDown();
+        }
+        persistString(mFolder);
+    }
 
 }
