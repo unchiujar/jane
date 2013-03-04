@@ -37,12 +37,13 @@
     <string name="start_gps_btn">Start GPS</string>
     <string name="continue_no_gps">Continue</string>
     <string name="connectivity_warning">Maps cannot be downloaded as network connection is unavailable. Enable the 3G or WiFi connection."</string>
-    <string name="help_text">Jane is a exploration application based on the the Fog Of War concept used in strategy games.
-	 
-	On the map the unexplored area is displayed grayed out while the explored part is clear. The application needs a GPS fix in order
-	to mark an area as explored as the accuracy from the other location sources is not good enough. Currently the minimum accuracy needed
-	for saving the explored area is set at 20 m (60 feet). The accuracy is displayed as a disc around the current position.
-	Jane saves your exploration in an internal database (nothing is sent over the network).</string>
+    <string name="help_text">Jane is a navigation application based on
+from the XKCD author Randall Munroe. To navigate to a destination one only needs to know
+the direction in hour format (at six o'clock, at 2 o'clock. etc) and the distance
+to the destination. Jane provides a screen off navigation solution by speaking the
+direction and distance to a destination. The destination and waypoints to the destination
+can be imported from a file or add directly from the application. If imported from a file
+the waypoints are in latitude longitude info format, with each waypoint on a different line.  </string>
     <string name="feedback_text">Send feedback or suggestion email</string>
     <string name="feedback_email">vasile.jureschi@gmail.com</string>
     <string name="email_subject">Jane feedback</string>
@@ -59,10 +60,10 @@
     <string name="remote_service_connected">Connected to location service</string>
     <string name="remote_service_disconnected">Disconnected from location service</string>
     <string name="load">Load</string>
-    <string name="import_locations">Import locations</string>
-    <string name="import_locationsx">Import</string>    
-    <string name="select_locations_folder">Select locations folder</string>
-    <string name="importing_locations">Importing locations, please wait…</string>
+    <string name="import_locations">Import waypoints</string>
+    <string name="import_locationsx">Import</string>
+    <string name="select_locations_folder">Select waypoints folder</string>
+    <string name="importing_locations">Importing waypoints, please wait…</string>
     <string name="measurement_system">Measurement system</string>
     <string name="map_movement">Map movement</string>
     <string name="location_updates_frequency">Location updates frequency</string>
