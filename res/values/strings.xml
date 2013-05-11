@@ -39,7 +39,7 @@
     <string name="connectivity_warning">Maps cannot be downloaded as network connection is unavailable. Enable the 3G or WiFi connection."</string>
     <string name="help_text">Jane is a navigation application based on
 from the XKCD author Randall Munroe. To navigate to a destination one only needs to know
-the direction in hour format (at six o'clock, at 2 o'clock. etc) and the distance
+the direction in hour format (at six o\'clock, at 2 o\'clock. etc) and the distance
 to the destination. Jane provides a screen off navigation solution by speaking the
 direction and distance to a destination. The destination and waypoints to the destination
 can be imported from a file or add directly from the application. If imported from a file

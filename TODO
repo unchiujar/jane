@@ -1,6 +1,7 @@
-save zoom and location on application exit 
+save zoom on application exit 
 fix bearing
 add waypoint edit/delete
 add announcer frequency selection option
 save waypoints on app exit or rotation
-save/load  waypoint lists 
+save/load  waypoint lists
+screen off does not update the location properly  
